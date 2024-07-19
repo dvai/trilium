@@ -167,7 +167,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         this.$tree.on("mousedown", ".enter-workspace-button", e => {
             const node = $.ui.fancytree.getNode(e);
 
-            this.triggerCommand('hoistNote', {noteId: node.data.noteId});
+            this.triggerCommand('hoistNote', { noteId: node.data.noteId });
         });
 
         // fancytree doesn't support middle click, so this is a way to support it
@@ -214,7 +214,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return false;
         });
 
-        this.$treeSettingsPopup.on("click", e => {e.stopPropagation();});
+        this.$treeSettingsPopup.on("click", e => { e.stopPropagation(); });
 
         $(document).on('click', () => this.$treeSettingsPopup.hide());
 
@@ -351,7 +351,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     return false;
                 }
             },
-            beforeActivate: (event, {node}) => {
+            beforeActivate: (event, { node }) => {
                 // hidden subtree is hidden hackily - we want it to be present in the tree so that we can switch to it
                 // without reloading the whole tree, but we want it to be hidden when hoisted to root. FancyTree allows
                 // filtering the display only by ascendant - i.e. if the root is visible, all the descendants are as well.
@@ -375,9 +375,18 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 this.clearSelectedNodes();
 
                 const notePath = treeService.getNotePath(data.node);
+                const targetNoteId = notePath.split("/").slice(-1)[0]
 
-                const activeNoteContext = appContext.tabManager.getActiveContext();
-                await activeNoteContext.setNote(notePath);
+                // 如果tab列表中已经存在该笔记，则打开该笔记标签而不是在本标签内刷新（类似vscode）
+                const activeNoteContexts = appContext.tabManager.mainNoteContexts;
+                const matchingNoteContext = activeNoteContexts.find(nc => nc.noteId === targetNoteId);
+                if (matchingNoteContext) {
+                    appContext.tabManager.activateNoteContext(matchingNoteContext.ntxId);
+                }
+                else {
+                    const activeNoteContext = appContext.tabManager.getActiveContext();
+                    await activeNoteContext.setNote(notePath);
+                }
             },
             expand: (event, data) => this.setExpanded(data.node.data.branchId, true),
             collapse: (event, data) => this.setExpanded(data.node.data.branchId, false),
@@ -402,11 +411,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     }));
 
                     if (notes.length === 1) {
-                        linkService.createLink(notes[0].noteId, {referenceLink: true, autoConvertToImage: true})
+                        linkService.createLink(notes[0].noteId, { referenceLink: true, autoConvertToImage: true })
                             .then($link => data.dataTransfer.setData("text/html", $link[0].outerHTML));
                     }
                     else {
-                        Promise.all(notes.map(note => linkService.createLink(note.noteId, {referenceLink: true, autoConvertToImage: true}))).then(links => {
+                        Promise.all(notes.map(note => linkService.createLink(note.noteId, { referenceLink: true, autoConvertToImage: true }))).then(links => {
                             const $list = $("<ul>").append(...links.map($link => $("<li>").append($link)));
 
                             data.dataTransfer.setData("text/html", $list[0].outerHTML);
@@ -487,7 +496,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 }
             },
             lazyLoad: (event, data) => {
-                const {noteId, noteType} = data.node.data;
+                const { noteId, noteType } = data.node.data;
 
                 if (noteType === 'search') {
                     const notePath = treeService.getNotePath(data.node.getParent());
@@ -582,7 +591,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     }
                 });
             },
-            select: (event, {node}) => {
+            select: (event, { node }) => {
                 if (hoistedNoteService.getHoistedNoteId() === 'root'
                     && node.data.noteId === '_hidden'
                     && node.isSelected()) {
@@ -618,12 +627,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             const note = froca.getNoteFromCache(node.data.noteId);
 
             if (note.isLaunchBarConfig()) {
-                import("../menus/launcher_context_menu.js").then(({default: LauncherContextMenu}) => {
+                import("../menus/launcher_context_menu.js").then(({ default: LauncherContextMenu }) => {
                     const launcherContextMenu = new LauncherContextMenu(this, node);
                     launcherContextMenu.show(e);
                 });
             } else {
-                import("../menus/tree_context_menu.js").then(({default: TreeContextMenu}) => {
+                import("../menus/tree_context_menu.js").then(({ default: TreeContextMenu }) => {
                     const treeContextMenu = new TreeContextMenu(this, node);
                     treeContextMenu.show(e);
                 });
@@ -694,7 +703,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         node.title = utils.escapeHtml(title);
 
         if (node.isExpanded() !== branch.isExpanded) {
-            await node.setExpanded(branch.isExpanded, {noEvents: true, noAnimation: true});
+            await node.setExpanded(branch.isExpanded, { noEvents: true, noAnimation: true });
         }
 
         node.renderTitle();
@@ -810,7 +819,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         // hidden subtree is hackily hidden via CSS when hoisted to root
         // make sure it's never selected for e.g. deletion in such a case
         return nodes.filter(node => hoistedNoteService.getHoistedNoteId() !== 'root'
-                                               || node.data.noteId !== '_hidden');
+            || node.data.noteId !== '_hidden');
     }
 
     async setExpandedStatusForSubtree(node, isExpanded) {
@@ -820,7 +829,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             node = this.getNodesByNoteId(hoistedNoteId)[0];
         }
 
-        const {branchIds} = await server.put(`branches/${node.data.branchId}/expanded-subtree/${isExpanded ? 1 : 0}`);
+        const { branchIds } = await server.put(`branches/${node.data.branchId}/expanded-subtree/${isExpanded ? 1 : 0}`);
 
         froca.getBranches(branchIds, true)
             .forEach(branch => branch.isExpanded = !!isExpanded);
@@ -829,7 +838,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             await node.load(true);
 
             if (node.data.noteId !== hoistedNoteService.getHoistedNoteId()) { // hoisted note should always be expanded
-                await node.setExpanded(isExpanded, {noEvents: true, noAnimation: true});
+                await node.setExpanded(isExpanded, { noEvents: true, noAnimation: true });
             }
         });
 
@@ -846,7 +855,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         await this.setExpandedStatusForSubtree(node, false);
     }
 
-    collapseTreeEvent() {this.collapseTree();}
+    collapseTreeEvent() { this.collapseTree(); }
 
     /**
      * @returns {FancytreeNode|null}
@@ -880,8 +889,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             const node = await this.expandToNote(activeContext.notePath);
 
             if (node) {
-                await node.makeVisible({scrollIntoView: true});
-                node.setActive(true, {noEvents: true, noFocus: false});
+                await node.makeVisible({ scrollIntoView: true });
+                node.setActive(true, { noEvents: true, noFocus: false });
             }
         }
     }
@@ -918,7 +927,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
                 if (expand) {
                     if (!parentNode.isExpanded()) {
-                        await parentNode.setExpanded(true, {noAnimation: true});
+                        await parentNode.setExpanded(true, { noAnimation: true });
                     }
 
                     // although the previous line should set the expanded status, it seems to happen asynchronously,
@@ -1016,8 +1025,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     await this.expandToNote(this.noteContext.notePath);
                 }
 
-                newActiveNode.setActive(true, {noEvents: true, noFocus: !oldActiveNodeFocused});
-                newActiveNode.makeVisible({scrollIntoView: true});
+                newActiveNode.setActive(true, { noEvents: true, noFocus: !oldActiveNodeFocused });
+                newActiveNode.makeVisible({ scrollIntoView: true });
             }
         }
 
@@ -1028,7 +1037,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const activeNode = $.ui.fancytree.getNode(e);
 
         activeNode.load(true);
-        activeNode.setExpanded(true, {noAnimation: true});
+        activeNode.setExpanded(true, { noAnimation: true });
 
         toastService.showMessage("Saved search note refreshed.");
     }
@@ -1084,7 +1093,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }, 600 * 1000);
     }
 
-    async entitiesReloadedEvent({loadResults}) {
+    async entitiesReloadedEvent({ loadResults }) {
         this.activityDetected();
 
         if (loadResults.isEmptyForTree()) {
@@ -1179,7 +1188,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                                 || node.getParent();
 
                             if (newActiveNode) {
-                                newActiveNode.setActive(true, {noEvents: true, noFocus: true});
+                                newActiveNode.setActive(true, { noEvents: true, noFocus: true });
                             }
                         } else {
                             movedActiveNode = node;
@@ -1294,7 +1303,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             this.tree.$container.focus();
         }
 
-        await node.setActive(true, {noEvents: true, noFocus: !activeNodeFocused});
+        await node.setActive(true, { noEvents: true, noFocus: !activeNodeFocused });
     }
 
     sortChildren(node) {
@@ -1348,12 +1357,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             const node = await this.getNodeFromPath(activeNotePath, true);
 
             if (node) {
-                await node.setActive(true, {noEvents: true, noFocus: true});
+                await node.setActive(true, { noEvents: true, noFocus: true });
             }
         }
     }
 
-    async hoistedNoteChangedEvent({ntxId}) {
+    async hoistedNoteChangedEvent({ ntxId }) {
         if (this.isNoteContext(ntxId)) {
             await this.filterHoistedBranch(true);
         }
@@ -1407,7 +1416,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 hotKeyMap[shortcutService.normalizeShortcut(shortcut)] = node => {
                     const notePath = treeService.getNotePath(node);
 
-                    this.triggerCommand(action.actionName, {node, notePath});
+                    this.triggerCommand(action.actionName, { node, notePath });
 
                     return false;
                 }
@@ -1435,7 +1444,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         return nodes.map(node => node.data.noteId);
     }
 
-    async deleteNotesCommand({node}) {
+    async deleteNotesCommand({ node }) {
         const branchIds = this.getSelectedOrActiveBranchIds(node)
             .filter(branchId => !branchId.startsWith('virt-')); // search results can't be deleted
 
@@ -1458,7 +1467,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         return !parentNote?.hasLabel('sorted');
     }
 
-    moveNoteUpCommand({node}) {
+    moveNoteUpCommand({ node }) {
         if (!this.canBeMovedUpOrDown(node)) {
             return;
         }
@@ -1470,7 +1479,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }
     }
 
-    moveNoteDownCommand({node}) {
+    moveNoteDownCommand({ node }) {
         if (!this.canBeMovedUpOrDown(node)) {
             return;
         }
@@ -1482,11 +1491,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }
     }
 
-    moveNoteUpInHierarchyCommand({node}) {
+    moveNoteUpInHierarchyCommand({ node }) {
         branchService.moveNodeUpInHierarchy(node);
     }
 
-    moveNoteDownInHierarchyCommand({node}) {
+    moveNoteDownInHierarchyCommand({ node }) {
         const toNode = node.getPrevSibling();
 
         if (toNode !== null) {
@@ -1508,7 +1517,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const prevSibling = node.getPrevSibling();
 
         if (prevSibling) {
-            prevSibling.setActive(true, {noEvents: true});
+            prevSibling.setActive(true, { noEvents: true });
 
             if (prevSibling.isSelected()) {
                 node.setSelected(false);
@@ -1532,7 +1541,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const nextSibling = node.getNextSibling();
 
         if (nextSibling) {
-            nextSibling.setActive(true, {noEvents: true});
+            nextSibling.setActive(true, { noEvents: true });
 
             if (nextSibling.isSelected()) {
                 node.setSelected(false);
@@ -1542,63 +1551,63 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }
     }
 
-    expandSubtreeCommand({node}) {
+    expandSubtreeCommand({ node }) {
         this.expandTree(node);
     }
 
-    collapseSubtreeCommand({node}) {
+    collapseSubtreeCommand({ node }) {
         this.collapseTree(node);
     }
 
-    async recentChangesInSubtreeCommand({node}) {
-        this.triggerCommand("showRecentChanges", {ancestorNoteId: node.data.noteId});
+    async recentChangesInSubtreeCommand({ node }) {
+        this.triggerCommand("showRecentChanges", { ancestorNoteId: node.data.noteId });
     }
 
-    selectAllNotesInParentCommand({node}) {
+    selectAllNotesInParentCommand({ node }) {
         for (const child of node.getParent().getChildren()) {
             child.setSelected(true);
         }
     }
 
-    copyNotesToClipboardCommand({node}) {
+    copyNotesToClipboardCommand({ node }) {
         clipboard.copy(this.getSelectedOrActiveBranchIds(node));
     }
 
-    cutNotesToClipboardCommand({node}) {
+    cutNotesToClipboardCommand({ node }) {
         clipboard.cut(this.getSelectedOrActiveBranchIds(node));
     }
 
-    pasteNotesFromClipboardCommand({node}) {
+    pasteNotesFromClipboardCommand({ node }) {
         clipboard.pasteInto(node.data.branchId);
     }
 
-    pasteNotesAfterFromClipboardCommand({node}) {
+    pasteNotesAfterFromClipboardCommand({ node }) {
         clipboard.pasteAfter(node.data.branchId);
     }
 
-    async exportNoteCommand({node}) {
+    async exportNoteCommand({ node }) {
         const notePath = treeService.getNotePath(node);
 
-        this.triggerCommand("showExportDialog", {notePath, defaultType: "subtree"});
+        this.triggerCommand("showExportDialog", { notePath, defaultType: "subtree" });
     }
 
-    async importIntoNoteCommand({node}) {
-        this.triggerCommand("showImportDialog", {noteId: node.data.noteId});
+    async importIntoNoteCommand({ node }) {
+        this.triggerCommand("showImportDialog", { noteId: node.data.noteId });
     }
 
-    editNoteTitleCommand({node}) {
+    editNoteTitleCommand({ node }) {
         appContext.triggerCommand('focusOnTitle');
     }
 
-    protectSubtreeCommand({node}) {
+    protectSubtreeCommand({ node }) {
         protectedSessionService.protectNote(node.data.noteId, true, true);
     }
 
-    unprotectSubtreeCommand({node}) {
+    unprotectSubtreeCommand({ node }) {
         protectedSessionService.protectNote(node.data.noteId, false, true);
     }
 
-    duplicateSubtreeCommand({node}) {
+    duplicateSubtreeCommand({ node }) {
         const nodesToDuplicate = this.getSelectedOrActiveNodes(node);
 
         for (const nodeToDuplicate of nodesToDuplicate) {
@@ -1614,27 +1623,27 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }
     }
 
-    moveShortcutToVisibleCommand({node, selectedOrActiveBranchIds}) {
+    moveShortcutToVisibleCommand({ node, selectedOrActiveBranchIds }) {
         branchService.moveToParentNote(selectedOrActiveBranchIds, '_lbVisibleLaunchers');
     }
 
-    moveShortcutToAvailableCommand({node, selectedOrActiveBranchIds}) {
+    moveShortcutToAvailableCommand({ node, selectedOrActiveBranchIds }) {
         branchService.moveToParentNote(selectedOrActiveBranchIds, '_lbAvailableLaunchers');
     }
 
-    addNoteLauncherCommand({node}) {
+    addNoteLauncherCommand({ node }) {
         this.createLauncherNote(node, 'note');
     }
 
-    addScriptLauncherCommand({node}) {
+    addScriptLauncherCommand({ node }) {
         this.createLauncherNote(node, 'script');
     }
 
-    addWidgetLauncherCommand({node}) {
+    addWidgetLauncherCommand({ node }) {
         this.createLauncherNote(node, 'customWidget');
     }
 
-    addSpacerLauncherCommand({node}) {
+    addSpacerLauncherCommand({ node }) {
         this.createLauncherNote(node, 'spacer');
     }
 
