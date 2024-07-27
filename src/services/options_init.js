@@ -31,7 +31,7 @@ function initNotSyncedOptions(initialized, opts = {}) {
     let theme = 'dark'; // default based on the poll in https://github.com/zadam/trilium/issues/2516
 
     if (utils.isElectron()) {
-        const {nativeTheme} = require('electron');
+        const { nativeTheme } = require('electron');
 
         theme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
     }
@@ -90,7 +90,8 @@ const defaultOptions = [
     { name: 'customSearchEngineName', value: 'DuckDuckGo', isSynced: true },
     { name: 'customSearchEngineUrl', value: 'https://duckduckgo.com/?q={keyword}', isSynced: true },
     { name: 'promotedAttributesOpenInRibbon', value: 'true', isSynced: true },
-    { name: 'editedNotesOpenInRibbon', value: 'true', isSynced: true }
+    { name: 'editedNotesOpenInRibbon', value: 'true', isSynced: true },
+    { name: 'homepageNotePath', value: '#root', isSynced: true }
 ];
 
 function initStartupOptions() {
@@ -98,7 +99,7 @@ function initStartupOptions() {
 
     const allDefaultOptions = defaultOptions.concat(getKeyboardDefaultOptions());
 
-    for (const {name, value, isSynced} of allDefaultOptions) {
+    for (const { name, value, isSynced } of allDefaultOptions) {
         if (!(name in optionsMap)) {
             optionService.createOption(name, value, isSynced);
 

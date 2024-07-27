@@ -57,7 +57,8 @@ const ALLOWED_OPTIONS = new Set([
     'customSearchEngineName',
     'customSearchEngineUrl',
     'promotedAttributesOpenInRibbon',
-    'editedNotesOpenInRibbon'
+    'editedNotesOpenInRibbon',
+    'homepageNotePath'
 ]);
 
 function getOptions() {
@@ -76,7 +77,7 @@ function getOptions() {
 }
 
 function updateOption(req) {
-    const {name, value} = req.params;
+    const { name, value } = req.params;
 
     if (!update(name, value)) {
         throw new ValidationError("not allowed option to change");
@@ -108,7 +109,7 @@ function update(name, value) {
 }
 
 function getUserThemes() {
-    const notes = searchService.searchNotes("#appTheme", {ignoreHoistedNote: true});
+    const notes = searchService.searchNotes("#appTheme", { ignoreHoistedNote: true });
     const ret = [];
 
     for (const note of notes) {
